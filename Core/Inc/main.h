@@ -57,8 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_Pin GPIO_PIN_0
-#define LED_GPIO_Port GPIOC
+#define LED_R_Pin GPIO_PIN_0
+#define LED_R_GPIO_Port GPIOC
+#define LED_G_Pin GPIO_PIN_1
+#define LED_G_GPIO_Port GPIOC
 #define Fan_Pin GPIO_PIN_5
 #define Fan_GPIO_Port GPIOA
 #define WaterLevel_Pin GPIO_PIN_6
@@ -67,6 +69,12 @@ void Error_Handler(void);
 #define Dht11_GPIO_Port GPIOC
 #define Photo_Pin GPIO_PIN_5
 #define Photo_GPIO_Port GPIOC
+#define LED_B_Pin GPIO_PIN_0
+#define LED_B_GPIO_Port GPIOB
+#define Pump_Pin GPIO_PIN_6
+#define Pump_GPIO_Port GPIOC
+#define Pump2_Pin GPIO_PIN_8
+#define Pump2_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 

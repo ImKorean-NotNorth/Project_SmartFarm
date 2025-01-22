@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := ProjectSmartFarm
+BUILD_ARTIFACT_NAME := Project_SmartFarm
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-ProjectSmartFarm.elf \
+Project_SmartFarm.elf \
 
 MAP_FILES += \
-ProjectSmartFarm.map \
+Project_SmartFarm.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-ProjectSmartFarm.list \
+Project_SmartFarm.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: ProjectSmartFarm.elf secondary-outputs
+main-build: Project_SmartFarm.elf secondary-outputs
 
 # Tool invocations
-ProjectSmartFarm.elf ProjectSmartFarm.map: $(OBJS) $(USER_OBJS) C:\Users\user\STM32CubeIDE\workspace_1.17.0\ProjectSmartFarm\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ProjectSmartFarm.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\user\STM32CubeIDE\workspace_1.17.0\ProjectSmartFarm\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ProjectSmartFarm.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Project_SmartFarm.elf Project_SmartFarm.map: $(OBJS) $(USER_OBJS) C:\Users\user\STM32CubeIDE\workspace_1.17.0\Project_SmartFarm\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Project_SmartFarm.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\user\STM32CubeIDE\workspace_1.17.0\Project_SmartFarm\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Project_SmartFarm.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-ProjectSmartFarm.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "ProjectSmartFarm.list"
+Project_SmartFarm.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Project_SmartFarm.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) ProjectSmartFarm.elf ProjectSmartFarm.list ProjectSmartFarm.map default.size.stdout
+	-$(RM) Project_SmartFarm.elf Project_SmartFarm.list Project_SmartFarm.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

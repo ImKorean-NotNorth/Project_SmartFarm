@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -42,11 +42,11 @@
 /* USER CODE BEGIN PD */
 
 #ifdef __GNUC__
-  /* With GCC, small printf (option LD Linker->Libraries->Small printf
+/* With GCC, small printf (option LD Linker->Libraries->Small printf
      set to 'Yes') calls __io_putchar() */
-  #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 #else
-  #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
 PUTCHAR_PROTOTYPE
 {
@@ -71,10 +71,17 @@ PUTCHAR_PROTOTYPE
 DHT11 dht;
 char lcdBuffer[16];
 volatile uint16_t adcValue[2];
+
+#define Light       (adcValue[0])
+#define WaterLevel  (adcValue[1])
+
+// 물 수위 설정 전 코드
 // volatile uint16_t adcValue;
 // volatile uint16_t adcValue2;
+
 uint8_t adcFlag = 0;
 uint8_t rxData;
+uint64_t WaterPumpCounter = 0;
 
 /* USER CODE END PV */
 
@@ -94,7 +101,7 @@ void updateLCD(void)
   HAL_Delay(1);
 
   // 두 번째 줄: 조도값
-  sprintf(lcdBuffer, "Light:%d", adcValue[0]); // 값바꿔줌
+  sprintf(lcdBuffer, "Light:%d", Light); // 값바꿔줌
   moveCursor(1, 0);
   lcdString(lcdBuffer);
 }
@@ -117,22 +124,76 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  // if (huart->Instance == USART2)
-  // 버튼 누르면 Fan On
-    if(rxData == 'w')
+  if(huart->Instance == USART2)
+  {
+    //HAL_UART_Receive_IT(&huart2, &rxData, sizeof(rxData));
+    //HAL_UART_Transmit_IT(&huart2, &rxData, sizeof(rxData));
+
+    if(rxData == 'L')
+    {
+      HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 1);
+      HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 1);
+      HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, 1);
+    }
+
+    if(rxData == 'l')
+    {
+      HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 0);
+      HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 0);
+      HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, 0);
+    }
+
+    if(rxData == 'P')
+    {
+      HAL_GPIO_WritePin(Pump_GPIO_Port, Pump_Pin, 1);
+      HAL_GPIO_WritePin(Pump2_GPIO_Port, Pump2_Pin, 0);
+//      HAL_TIM_Base_Start_IT(&htim3);
+    }
+
+    if(rxData == 'p')
+    {
+//      __HAL_TIM_SET_COUNTER(&htim3, 0);
+//      HAL_TIM_Base_Stop_IT(&htim3);
+      HAL_GPIO_WritePin(Pump_GPIO_Port, Pump_Pin, 0);
+      HAL_GPIO_WritePin(Pump2_GPIO_Port, Pump2_Pin, 0);
+    }
+
+    if(rxData == 'F')
     {
       TIM2->CCR1 = 65535;
     }
-    else if(rxData == 's')
+
+    if(rxData == 'f')
     {
       TIM2->CCR1 = 0;
     }
 
+    if(rxData == 'E')
+    {
+      HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 1);
+      HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 0);
+      HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, 0);
+    }
+
     HAL_UART_Receive_IT(&huart2, &rxData, sizeof(rxData));
+  }
 }
 
-
-
+//  void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+//  {
+//    if (htim->Instance == TIM3)//모터 회전하라는 타이머 플레그가 세워지면
+//    {
+//
+//      if(WaterPumpCounter >= 3)
+//      {
+//        WaterPumpCounter = 0;
+//        __HAL_TIM_SET_COUNTER(&htim3, 0);
+//        HAL_TIM_Base_Stop_IT(&htim3);
+//        HAL_GPIO_WritePin(Pump_GPIO_Port, Pump_Pin, 0);
+//      }
+//      WaterPumpCounter++;
+//    }
+//  }
 
 
 /* USER CODE END PFP */
@@ -179,98 +240,99 @@ int main(void)
   MX_TIM11_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  // 마이크로초 타이머 시작
-//  HAL_TIM_Base_Start(&htim11);
-//  HAL_Delay(100);  // 타이머 안정화 대기
+    // 마이크로초 타이머 시작
+    //  HAL_TIM_Base_Start(&htim11);
+    //  HAL_Delay(100);  // 타이머 안정화 대기
 
-  // LCD 초기화 전 충분한 대기시간
-  //HAL_Delay(1000);
-  lcdInit();
-  HAL_Delay(200);
-  // LCD 초기화 후 충분히 대기
+    // LCD 초기화 전 충분한 대기시간
+    //HAL_Delay(1000);
+    lcdInit();
+    HAL_Delay(200);
+    // LCD 초기화 후 충분히 대기
 
-  // LCD 테스트
-  lcdCommand(CLEAR_DISPLAY);
-  HAL_Delay(2);
-  moveCursor(0, 0);
-  lcdString("System Start...");
-  HAL_Delay(1000); // 딜레이 빼면 안됨..
+    // LCD 테스트
+    lcdCommand(CLEAR_DISPLAY);
+    HAL_Delay(2);
+    moveCursor(0, 0);
+    lcdString("System Start...");
+    HAL_Delay(1000); // 딜레이 빼면 안됨..
 
-  // 온습도센서 Init , 초기화 및 GPIO 설정
-  dht11Init(&dht, GPIOC, GPIO_PIN_4);
-  dht11GpioMode(&dht, OUTPUT);
-  HAL_GPIO_WritePin(dht.port, dht.pin, GPIO_PIN_SET);
-  HAL_Delay(1000); // DHT11 안정화 대기
+    // 온습도센서 Init , 초기화 및 GPIO 설정
+    dht11Init(&dht, GPIOC, GPIO_PIN_4);
 
-  // ADC로 저항값을 DMA로 받기위한 대기상태
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcValue, 2);
-  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adcValue, 1);
+    // ADC로 저항값을 DMA로 받기위한 대기상태
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcValue, 2);
+    //HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adcValue, 1);
 
-  // 유아트 대기상태 ( 버튼 클릭시 유아트 필요 )
-  HAL_UART_Receive_IT(&huart2, &rxData, sizeof(rxData));
+    // 유아트 대기상태 ( 버튼 클릭시 유아트 필요 )
+    HAL_UART_Receive_IT(&huart2, &rxData, sizeof(rxData));
 
-  // TIM3 PWM 시작 (DC 팬 모터용)
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-  // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 60000);
+    // TIM3 PWM 시작 (DC 팬 모터용)
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
-  // printf("adcValue1 -> %d\r\n", adcValue[0]);
-  // printf("adcvalue2 -> %d\r\n\n", adcValue[1]);
+    // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 60000);
+
+    // printf("adcValue1 -> %d\r\n", adcValue[0]);
+    // printf("adcvalue2 -> %d\r\n\n", adcValue[1]);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    // DHT11 데이터 읽기 시도
-    if(dht11Read(&dht))
+
+    dht11GpioMode(&dht, OUTPUT);
+    HAL_GPIO_WritePin(dht.port, dht.pin, GPIO_PIN_SET);
+    HAL_Delay(1000); // DHT11 안정화 대기
+
+
+    while (1)
     {
-      // UART로 온습도와 조도값 전송
-      printf("Temp:%d,Hum:%d,Light:%d,WL:%d\r\n",
-             dht.temperature,
-             dht.humidity,
-             adcValue[0],adcValue[1]);
-
-      // LCD 업데이트
-      updateLCD();
-
-      if(dht.humidity > 50)
+      // DHT11 데이터 읽기 시도
+      if(dht11Read(&dht))
       {
-        TIM2->CCR1 = 65535;
+        // UART로 온습도와 조도값 전송
+        printf("%d, %d, %d\n",
+               dht.temperature,
+               dht.humidity,
+               Light);
+
+        // LCD 업데이트
+        updateLCD();
+//        if(dht.temperature > 28)
+//        {
+//          TIM2->CCR1 = 65535;
+//        }
+//
+//
+//        if (Light < 1000)
+//        {
+//          HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, 1);
+//
+//          HAL_GPIO_WritePin(Pump_GPIO_Port, Pump_Pin, 1);
+//          HAL_TIM_Base_Start_IT(&htim3);
+//
+//        }
+        // 온습도 측정 포트설정 리셋
+        DHT_Reset();
+        HAL_Delay(2000);  // 2초 주기로 반복
+        // ADC로 저항값을 DMA로 '다시' 받기위한 대기상태
+        HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcValue, 2);
+        //HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adcValue, 1);
       }
+
+
       else
       {
-
+        printf("DHT11 Read Failed\r\n");
+        // DHT11 리셋을 위한 처리
+        DHT_Reset();
+        HAL_Delay(1000);
       }
-      // 온습도 측정 포트설정 리셋
-      DHT_Reset();
-      HAL_Delay(2000);  // 2초 주기로 반복
-      if(adcValue[0] < 1000)
-      {
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, 1);
-      }
-      else if (adcValue[0] > 1000)
-      {
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, 0);
-      }
-
-      // ADC로 저항값을 DMA로 '다시' 받기위한 대기상태
-      HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcValue, 2);
-      //HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adcValue, 1);
-    }
-
-    else
-    {
-      printf("DHT11 Read Failed\r\n");
-      // DHT11 리셋을 위한 처리
-      DHT_Reset();
-      HAL_Delay(1000);
-    }
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+    }
   /* USER CODE END 3 */
 }
 
@@ -332,11 +394,11 @@ void SystemClock_Config(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1)
+    {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -351,7 +413,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+    /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
